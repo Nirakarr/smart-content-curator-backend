@@ -137,7 +137,7 @@ export const deleteItem = async (req: Request, res: Response) => {
       return;
     }
     await itemRepository.delete(item.id);
-    res.status(204).send();
+    res.status(204).json({ success: "Item Deleted Successfully" });
   } catch (error) {
     console.error("Failed to delete item:", error);
     res.status(500).json({ error: "Failed to delete item" });
