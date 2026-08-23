@@ -133,6 +133,17 @@ export class ItemRepository {
     });
   }
 
+  findByUserAndTitle(userId: string, title: string) {
+    return prisma.savedItem.findFirst({
+      where: {
+        userId,
+        title: { equals: title, mode: "insensitive" },
+      },
+      orderBy: { createdAt: "desc" },
+      include: itemInclude,
+    });
+  }
+
   delete(itemId: string) {
     return prisma.savedItem.delete({ where: { id: itemId } });
   }

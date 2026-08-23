@@ -22,6 +22,12 @@ export const itemIdSchema = z.object({
   }),
 });
 
+export const itemTitleSchema = z.object({
+  params: z.object({
+    title: z.string().trim().min(1, "Title is required"),
+  }),
+});
+
 export type CreateItemRequest = z.infer<typeof createItemSchema>;
 export type QueryItemsRequest = z.infer<typeof queryItemsSchema>;
 

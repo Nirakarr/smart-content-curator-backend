@@ -97,6 +97,25 @@ export const getItem = async (req: Request, res: Response) => {
   }
 };
 
+export const getItemByTitle = async (req: Request, res: Response) => {
+  try {
+    const user = await itemRepository.getDemoUser();
+    const item = await itemRepository.findByUserAndTitle(
+      user.id,
+      String(req.params.title),
+    );
+
+    if (!item) {
+      res.status(404).json({ error: "Item not found" });
+      return;
+    }
+    res.status(200).json({ data: item });
+  } catch (error) {
+    console.error("Failed to fetch item by title:", error);
+    res.status(500).json({ error: "Failed to fetch item by title" });
+  }
+};
+
 export const deleteItem = async (req: Request, res: Response) => {
   try {
     const user = await itemRepository.getDemoUser();
