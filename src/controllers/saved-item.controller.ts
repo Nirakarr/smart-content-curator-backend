@@ -17,10 +17,18 @@ export const createItem = async (req: Request, res: Response) => {
       return;
     }
 
+    let metadata;
+    try {
+      metadata = await scrapeWebsite(url);
+    } catch (error) {
+      console.error("Failed to scrape item:", error);
+      res.status(404).json({ error: "Content not found at the provided URL" });
+      return;
+    }
+
     const pendingItem = await itemRepository.createPending(user.id, url);
     savedItemId = pendingItem.id;
 
-    const metadata = await scrapeWebsite(url);
     const fallbackSummary =
       metadata.contentToAnalyze.slice(0, 300).trim() || metadata.title;
     const fallbackTags = createTags(metadata.title, metadata.source);
