@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { scrapeWebsite } from "../services/scraper.service";
+import { generateEnrichment } from "../services/ai.service";
 import { itemRepository } from "../repositories/saved-item.repository";
 import { createTags } from "../utils/tag.utils";
 
@@ -20,9 +21,19 @@ export const createItem = async (req: Request, res: Response) => {
     savedItemId = pendingItem.id;
 
     const metadata = await scrapeWebsite(url);
-    const summary =
+    const fallbackSummary =
       metadata.contentToAnalyze.slice(0, 300).trim() || metadata.title;
-    const tagNames = createTags(metadata.title, metadata.source);
+    const fallbackTags = createTags(metadata.title, metadata.source);
+
+    let summary = fallbackSummary;
+    let tagNames = fallbackTags;
+    try {
+      const enrichment = await generateEnrichment(metadata.contentToAnalyze);
+      summary = enrichment.summary || fallbackSummary;
+      tagNames = enrichment.tags.length > 0 ? enrichment.tags : fallbackTags;
+    } catch (error) {
+      console.warn("AI enrichment unavailable; using local enrichment:", error);
+    }
 
     const item = await itemRepository.complete(
       pendingItem.id,

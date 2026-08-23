@@ -1,39 +1,45 @@
-const XAI_API_URL = "https://api.x.ai/v1/chat/completions";
-const XAI_MODEL = process.env.XAI_MODEL ?? "grok-3-mini";
+const GEMINI_API_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.6-flash";
 
 export async function generateEnrichment(text: string) {
-  const apiKey = process.env.XAI_API_KEY;
-  if (!apiKey) throw new Error("XAI_API_KEY is not configured");
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not configured");
 
-  const response = await fetch(XAI_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${GEMINI_API_URL}/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `Return a JSON object with exactly "summary" (2-3 sentences) and "tags" (an array of 3-5 strings) for this content:\n\n${text}`,
+              },
+            ],
+          },
+        ],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
     },
-    body: JSON.stringify({
-      model: XAI_MODEL,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content: `Output a JSON object with exactly: "summary" (2-3 sentences) and "tags" (array of 3-5 strings).`,
-        },
-        { role: "user", content: text },
-      ],
-    }),
-  });
+  );
 
   if (!response.ok) {
     throw new Error(
-      `xAI request failed (${response.status}): ${await response.text()}`,
+      `Gemini request failed (${response.status}): ${await response.text()}`,
     );
   }
 
   const data = (await response.json()) as {
-    choices?: Array<{ message?: { content?: string | null } }>;
+    candidates?: Array<{
+      content?: { parts?: Array<{ text?: string }> };
+    }>;
   };
-  const content = data.choices?.[0]?.message?.content;
+  const content = data.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!content) throw new Error("AI returned empty response");
 
   return JSON.parse(content) as { summary: string; tags: string[] };
